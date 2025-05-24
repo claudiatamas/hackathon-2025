@@ -9,9 +9,6 @@ use App\Domain\Entity\User;
 
 interface ExpenseRepositoryInterface
 {
-    // TODO: please review the list of methods below. Keep in mind these are just provided for guidance,
-    // TODO: and there is no requirement to keep them as they are. Feel free to adapt to your own implementation.
-
     public function save(Expense $expense): void;
 
     public function delete(int $id): void;
@@ -24,9 +21,16 @@ interface ExpenseRepositoryInterface
 
     public function listExpenditureYears(User $user): array;
 
+    public function list(User $user, ?int $year, ?int $month, int $offset, int $limit): array;
+
     public function sumAmountsByCategory(array $criteria): array;
 
     public function averageAmountsByCategory(array $criteria): array;
 
+    public function count(User $user, ?int $year, ?int $month): int;
+
+    public function beginTransaction(): void;
+    public function commit(): void;
+    public function rollback(): void;
     public function sumAmounts(array $criteria): float;
 }

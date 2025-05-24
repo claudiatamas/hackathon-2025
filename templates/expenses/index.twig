@@ -2,123 +2,130 @@
 {% block title %}Expenses{% endblock %}
 {% block content %}
 
-    {# TODO: remove mock data below, pass real expenses from the controller action #}
-    {% set expenses = [
-        {'id': 1, 'description': 'Groceries', 'amount': 150.50, 'category': 'Food', 'date': '2025-05-31'},
-        {'id': 2, 'description': 'Internet Bill', 'amount': 79.99, 'category': 'Utilities', 'date': '2025-05-25'},
-        {'id': 3, 'description': 'Movie Tickets', 'amount': 30.00, 'category': 'Entertainment', 'date': '2025-05-18'},
-        {'id': 4, 'description': 'Gas', 'amount': 45.75, 'category': 'Transportation', 'date': '2025-05-10'},
-        {'id': 5, 'description': 'Gym Membership', 'amount': 50.00, 'category': 'Health', 'date': '2025-05-05'}
-    ] %}
-    {% set total = 5 %}
+<div class="max-w-6xl mx-auto px-4 py-6 space-y-10">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Expenses</h1>
+        <a href="/expenses/create" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-5 rounded-lg shadow transition">
+            + Add Expense
+        </a>
+    </div>
 
-    <h1 class="text-2xl font-bold mb-4">Expenses</h1>
+    {% if app.request.query.get('success') %}
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {% if app.request.query.get('success') starts with 'imported_' %}
+                Successfully imported {{ app.request.query.get('success')|replace({'imported_': ''}) }} expenses!
+            {% else %}
+                {{ app.request.query.get('success') }}
+            {% endif %}
+        </div>
+    {% endif %}
 
-    {# TODO: Configure the necessary href attribute #}
-    <a href=""
-       class="inline-block mb-6 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-        Add Expense
-    </a>
+    {% if app.request.query.get('error') %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {% if app.request.query.get('error') == 'upload_failed' %}
+                File upload failed. Please try again.
+            {% else %}
+                {{ app.request.query.get('error') }}
+            {% endif %}
+        </div>
+    {% endif %}
 
-    <section class="mb-8">
-        <h2 class="text-xl font-bold mb-4">List monthly expenses</h2>
-        {# Listing filters #}
-        <form action="/expenses" method="GET" class="mb-6 flex gap-4">
-            <div>
-                <label for="year" class="block text-gray-300 text-sm font-bold mb-2">Year</label>
-                {# TODO: remove mock data below, pass actual years with expenses from the controller #}
-                <select name="year" id="year"
-                        class="shadow border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="2025" selected>2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
+    <section class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Filter by Month & Year</h2>
+        <form action="/expenses" method="GET" class="flex flex-wrap gap-4">
+            <div class="flex flex-col">
+                <label for="year" class="text-sm text-gray-600 mb-1">Year</label>
+                <select name="year" id="year" class="bg-white border border-gray-300 text-gray-800 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500">
+                  {% for y in years %}
+                        <option value="{{ y }}" {{ y == year ? 'selected' : '' }}>{{ y }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <div>
-                <label for="month" class="block text-gray-300 text-sm font-bold mb-2">Month</label>
-                <select name="month" id="month"
-                        class="shadow border rounded py-2 px-3 text-gray-400 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5" selected>May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
+            <div class="flex flex-col">
+                <label for="month" class="text-sm text-gray-600 mb-1">Month</label>
+                <select name="month" id="month" class="bg-white border border-gray-300 text-gray-800 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500">
+                    {% for i in 1..12 %}
+                        {% set monthName = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i-1] %}
+                        <option value="{{ i }}" {{ i == month ? 'selected' : '' }}> {{ monthName }}</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="self-end">
-                <button type="submit"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition">
                     Filter
                 </button>
             </div>
         </form>
+    </section>
 
-        {# Listing #}
-        <table class="w-full">
-            <thead>
-            <tr class="bg-gray-800 text-left">
-                <th class="py-2 px-4">Description</th>
-                <th class="py-2 px-4">Amount</th>
-                <th class="py-2 px-4">Date</th>
-                <th class="py-2 px-4">Category</th>
-                <th class="py-2 px-4">Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for expense in expenses %}
-                <tr class="border-b border-gray-700">
-                    <td class="py-2 px-4">{{ expense.description }}</td>
-                    <td class="py-2 px-4">{{ expense.amountCents / 100 | number_format(2) }} €</td>
-                    <td class="py-2 px-4">{{ expense.date|date('m/d/Y') }}</td>
-                    <td class="py-2 px-4">{{ expense.category }}</td>
-                    <td class="py-2 px-4">
-                        {# TODO: Configure the necessary href attribute #}
-                        <a href="#"
-                           class="text-blue-500 hover:text-blue-400 mr-2">Edit</a>
-                        {# TODO: Configure the necessary form action #}
-                        <form action="#" method="POST" class="inline">
-                            <button type="submit"
-                                    class="text-red-500 hover:text-red-400">Delete
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <section class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Monthly Expenses</h2>
+        
+        {% if expenses is empty %}
+            <div class="text-center py-8 text-gray-500">
+                <p>No expenses found for this period.</p>
+                <a href="/expenses/create" class="text-blue-600 hover:underline">Add your first expense</a>
+            </div>
+        {% else %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left text-gray-700">
+                    <thead class="bg-gray-100 text-xs uppercase text-gray-500 border-b">
+                    <tr>
+                        <th class="px-4 py-3">Description</th>
+                        <th class="px-4 py-3">Amount</th>
+                        <th class="px-4 py-3">Date</th>
+                        <th class="px-4 py-3">Category</th>
+                        <th class="px-4 py-3">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                    {% for expense in expenses %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-4 py-3">{{ expense.description }}</td>
+                            <td class="px-4 py-3">{{ (expense.amount_cents / 100) | number_format(2, '.', ',') }} €</td>
+                            <td class="px-4 py-3">{{ expense.date|date('d/m/Y') }}</td>
+                            <td class="px-4 py-3">{{ expense.category }}</td>
+                            <td class="px-4 py-3">
+                                <a href="/expenses/{{ expense.id }}/edit" class="text-blue-600 hover:underline mr-3">Edit</a>
+                                <form action="/expenses/{{ expense.id }}/delete" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense?')">
+                                    <button type="submit" class="text-red-500 hover:underline">Delete</button>
+                                </form>
 
-        {# Listing pagination #}
-        <div class="mt-1 flex justify-center">{{ total }} item(s)</div>
-        <div class="mt-1 flex justify-between">
-            {% if total and page > 1 %}
-                {# TODO: fill in HREF #}
-                <a href="#" class="text-blue-500 hover:text-blue-400">Previous</a>
-            {% else %}
-                <span></span>
-            {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
 
-            {# TODO: hide link when there is no next page available, fill in HREF #}
-            <a href="#" class="text-blue-500 hover:text-blue-400">Next</a>
+        <div class="mt-4 flex justify-between items-center text-gray-500 text-sm">
+            <div>{{ total }} item(s)</div>
+            <div class="flex gap-4">
+                {% if page > 1 %}
+                    <a href="/expenses?year={{ year }}&month={{ month }}&page={{ page - 1 }}" class="hover:text-blue-600">Previous</a>
+                {% endif %}
+                {% if page < totalPages %}
+                    <a href="/expenses?year={{ year }}&month={{ month }}&page={{ page + 1 }}" class="hover:text-blue-600">Next</a>
+                {% endif %}
+            </div>
         </div>
     </section>
 
-    <section class="mb-8">
-        <h2 class="text-xl font-bold mb-4">Import expenses from CSV</h2>
-        <form action="expenses/import" method="POST" enctype="multipart/form-data" class="flex items-center gap-4">
-            <label for="csvFile" class="text-gray-300 text-sm font-bold">CSV File</label>
+   
+    <section class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Import Expenses</h2>
+       <form action="/expenses/import" method="POST" enctype="multipart/form-data" class="flex flex-wrap gap-4 items-center">
+            <label for="csv" class="text-sm text-gray-600">CSV File</label>
             <input type="file" id="csv" name="csv" accept=".csv" required
-                   class="shadow appearance-none border rounded py-2 px-3 text-gray-500 leading-tight focus:outline-none focus:shadow-outline">
-            <button type="submit"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                class="bg-white border border-gray-300 text-gray-800 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition">
                 Import
             </button>
         </form>
+
     </section>
+
+</div>
+
 {% endblock %}

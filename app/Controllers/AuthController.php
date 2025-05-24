@@ -22,35 +22,127 @@ class AuthController extends BaseController
 
     public function showRegister(Request $request, Response $response): Response
     {
-        // TODO: you also have a logger service that you can inject and use anywhere; file is var/app.log
         $this->logger->info('Register page requested');
-
         return $this->render($response, 'auth/register.twig');
     }
 
-    public function register(Request $request, Response $response): Response
+  public function register(Request $request, Response $response): Response
     {
-        // TODO: call corresponding service to perform user registration
+        $data = (array) $request->getParsedBody();
+        $username = trim($data['username'] ?? '');
+        $password = trim($data['password'] ?? '');
+        $confirmPassword = trim($data['confirm_password'] ?? '');
 
-        return $response->withHeader('Location', '/login')->withStatus(302);
+        $errors = [];
+
+        // Validate
+        if (strlen($username) < 4) {
+            $errors['username'] = 'Username must be at least 4 characters.';
+        }
+
+        if ($password !== $confirmPassword) {
+            $errors['confirm_password'] = 'Passwords do not match.';
+        }
+
+        if (!empty($errors)) {
+            return $this->render($response, 'auth/register.twig', [
+                'errors' => $errors,
+                'username' => $username,
+                'password' => $password,
+                'confirm_password' => $confirmPassword,
+            ]);
+        }
+
+        try {
+            $this->authService->register($username, $password);
+            return $response->withHeader('Location', '/login')->withStatus(302);
+
+        } catch (\InvalidArgumentException $e) {
+            $errors['username'] = $e->getMessage();
+
+            return $this->render($response, 'auth/register.twig', [
+                'errors' => $errors,
+                'username' => $username,
+                'password' => $password,
+                'confirm_password' => $confirmPassword,
+            ]);
+        } catch (\Exception $e) {
+            $errors['general'] = 'An unexpected error occurred. Please try again later.';
+
+            return $this->render($response, 'auth/register.twig', [
+                'errors' => $errors,
+                'username' => $username,
+                'password' => $password,
+                'confirm_password' => $confirmPassword,
+            ]);
+        }
     }
 
-    public function showLogin(Request $request, Response $response): Response
+
+
+   public function showLogin(Request $request, Response $response): Response
     {
         return $this->render($response, 'auth/login.twig');
     }
 
     public function login(Request $request, Response $response): Response
     {
-        // TODO: call corresponding service to perform user login, handle login failures
+        $data = (array) $request->getParsedBody();
+        $username = trim($data['username'] ?? '');
+        $password = trim($data['password'] ?? '');
 
-        return $response->withHeader('Location', '/')->withStatus(302);
+        $errors = [];
+
+        if ($username === '') {
+            $errors['username'] = 'Please enter your username.';
+        }
+
+        if ($password === '') {
+            $errors['password'] = 'Please enter your password.';
+        }
+
+        if (!empty($errors)) {
+            return $this->render($response, 'auth/login.twig', [
+                'errors' => $errors,
+                'username' => $username,
+            ]);
+        }
+
+        $success = $this->authService->attempt($username, $password);
+
+        if ($success) {
+            return $response->withHeader('Location', '/')->withStatus(302);
+        } else {
+            $errors['general'] = 'Invalid username or password.';
+            return $this->render($response, 'auth/login.twig', [
+                'errors' => $errors,
+                'username' => $username,
+            ]);
+        }
     }
 
-    public function logout(Request $request, Response $response): Response
+  public function logout(Request $request, Response $response): Response
     {
-        // TODO: handle logout by clearing session data and destroying session
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
 
+        $_SESSION = [];
+
+        // Delete cookies from session
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+
+        // Destroy session
+        session_destroy();
+
+        // Redirect to login
         return $response->withHeader('Location', '/login')->withStatus(302);
     }
+
 }

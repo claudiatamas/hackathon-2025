@@ -14,9 +14,18 @@ abstract class BaseController
     ) {}
 
     protected function render(Response $response, string $template, array $data = []): Response
-    {
-        return $this->view->render($response, $template, $data);
-    }
+        {
+            $currentUserId = $_SESSION['user_id'] ?? null;
+            $currentUserName = null;
 
-    // TODO: add here any common controller logic and use in concrete controllers
+            if ($currentUserId !== null) {
+              
+                $currentUserName = $_SESSION['username'] ?? null;
+            }
+       
+            $data['currentUserId'] = $currentUserId;
+            $data['currentUserName'] = $currentUserName;
+
+            return $this->view->render($response, $template, $data);
+        }
 }

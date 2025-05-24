@@ -12,7 +12,7 @@ class DashboardController extends BaseController
 {
     public function __construct(
         Twig $view,
-        // TODO: add necessary services here and have them injected by the DI container
+        // TODO: add necessary services here andhave them injected by the DI container
     )
     {
         parent::__construct($view);

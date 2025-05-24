@@ -104,8 +104,8 @@ A solution with passing analysis and unit tests will receive extra points.
 ## Delivery details
 
 Participant:
-- Full name: ...
-- Email address: ...
+- Full name: Tămaș Claudia-Paula
+- Email address: claudiatamas28@yahoo.com
 
 Features fully implemented:
 - ...
