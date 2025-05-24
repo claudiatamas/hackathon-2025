@@ -4,24 +4,30 @@ declare(strict_types=1);
 
 namespace App\Domain\Service;
 
-use App\Domain\Entity\User;
-
 class AlertGenerator
 {
-    // TODO: refactor the array below and make categories and their budgets configurable in .env
-    // Hint: store them as JSON encoded in .env variable, inject them manually in a dedicated service,
-    // then inject and use use that service wherever you need category/budgets information.
     private array $categoryBudgets = [
         'Groceries' => 300.00,
-        'Utilities' => 200.00,
-        'Transport' => 500.00,
-        // ...
+        'Transport' => 100.00,
+        'Utilities' => 250.00,
+        'Entertainment' => 150.00,
     ];
 
-    public function generate(User $user, int $year, int $month): array
+    public function generate(array $categoryTotals): array
     {
-        // TODO: implement this to generate alerts for overspending by category
+        $alerts = [];
 
-        return [];
+        foreach ($categoryTotals as $category => $data) {
+            if (isset($this->categoryBudgets[$category]) && $data['value'] > $this->categoryBudgets[$category]) {
+                $excess = $data['value'] - $this->categoryBudgets[$category];
+                $alerts[] = [
+                    'category' => $category,
+                    'amount' => $excess,
+                ];
+            }
+        }
+
+        return $alerts;
     }
+
 }

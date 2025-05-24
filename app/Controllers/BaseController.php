@@ -6,26 +6,36 @@ namespace App\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\Views\Twig;
+use App\Domain\Entity\User;
+use App\Domain\Repository\UserRepositoryInterface;
 
 abstract class BaseController
 {
+    protected UserRepositoryInterface $userRepository;
+
     public function __construct(
         protected Twig $view,
-    ) {}
+        UserRepositoryInterface $userRepository,
+    ) {
+        $this->userRepository = $userRepository;
+    }
 
-    protected function render(Response $response, string $template, array $data = []): Response
-        {
-            $currentUserId = $_SESSION['user_id'] ?? null;
-            $currentUserName = null;
-
-            if ($currentUserId !== null) {
-              
-                $currentUserName = $_SESSION['username'] ?? null;
-            }
-       
-            $data['currentUserId'] = $currentUserId;
-            $data['currentUserName'] = $currentUserName;
-
-            return $this->view->render($response, $template, $data);
+    // Retrieve currently logged-in user
+    protected function getCurrentUser(): ?User
+    {
+        if (isset($_SESSION['user_id'])) {
+            return $this->userRepository->find((int) $_SESSION['user_id']);
         }
+
+        return null;
+    }
+
+    // Render a Twig template with optional data and current user info
+    protected function render(Response $response, string $template, array $data = []): Response
+    {
+        $data['currentUserId'] = $_SESSION['user_id'] ?? null;
+        $data['currentUserName'] = $_SESSION['username'] ?? null;
+
+        return $this->view->render($response, $template, $data);
+    }
 }

@@ -30,7 +30,10 @@ interface ExpenseRepositoryInterface
     public function count(User $user, ?int $year, ?int $month): int;
 
     public function beginTransaction(): void;
+
     public function commit(): void;
+
     public function rollback(): void;
+
     public function sumAmounts(array $criteria): float;
 }

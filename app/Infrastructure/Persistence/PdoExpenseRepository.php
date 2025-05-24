@@ -25,7 +25,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $query = 'SELECT * FROM expenses WHERE id = :id';
         $statement = $this->pdo->prepare($query);
         $statement->execute(['id' => $id]);
-        $data = $statement->fetch();
+        $data = $statement->fetch(PDO::FETCH_ASSOC);
         if (false === $data) {
             return null;
         }
@@ -51,10 +51,8 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
                 'description' => $expense->description,
             ]);
             
-
             $expense->id = (int) $this->pdo->lastInsertId();
         } else {
-      
             $query = 'UPDATE expenses 
                       SET user_id = :user_id, date = :date, category = :category, 
                           amount_cents = :amount_cents, description = :description
@@ -72,12 +70,10 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         }
     }
 
-    
-
     public function delete(int $id): void
     {
-        $statement = $this->pdo->prepare('DELETE FROM expenses WHERE id = ?');
-        $statement->execute([$id]);
+        $statement = $this->pdo->prepare('DELETE FROM expenses WHERE id = :id');
+        $statement->execute(['id' => $id]);
     }
 
     public function findBy(array $criteria, int $from, int $limit): array
@@ -108,10 +104,8 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
         
         $query = "SELECT * FROM expenses {$whereClause} ORDER BY date DESC, id DESC LIMIT :limit OFFSET :offset";
-        
         $statement = $this->pdo->prepare($query);
         
-
         foreach ($params as $key => $value) {
             $statement->bindValue(':' . $key, $value);
         }
@@ -121,7 +115,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $statement->execute();
         
         $expenses = [];
-        while ($data = $statement->fetch()) {
+        while ($data = $statement->fetch(PDO::FETCH_ASSOC)) {
             $expenses[] = $this->createExpenseFromData($data);
         }
         
@@ -163,14 +157,14 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         return (int) $statement->fetchColumn();
     }
 
-     public function list(User $user, ?int $year, ?int $month, int $offset, int $limit): array
+    public function list(User $user, ?int $year, ?int $month, int $offset, int $limit): array
     {
         $params = [':user_id' => $user->id];
         $where = 'WHERE user_id = :user_id';
 
         if ($year !== null) {
             $where .= ' AND strftime("%Y", date) = :year';
-            $params[':year'] = strval($year);
+            $params[':year'] = (string) $year;
         }
 
         if ($month !== null) {
@@ -184,11 +178,11 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         foreach ($params as $key => $val) {
             $stmt->bindValue($key, $val);
         }
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
         $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function listExpenditureYears(User $user): array
@@ -198,7 +192,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $statement->execute(['user_id' => $user->id]);
         
         $years = [];
-        while ($row = $statement->fetch()) {
+        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
             $years[] = (int) $row['year'];
         }
         
@@ -233,7 +227,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $statement->execute($params);
         
         $results = [];
-        while ($row = $statement->fetch()) {
+        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
             $results[$row['category']] = (float) ($row['total_cents'] / 100);
         }
         
@@ -268,7 +262,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $statement->execute($params);
         
         $results = [];
-        while ($row = $statement->fetch()) {
+        while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
             $results[$row['category']] = (float) ($row['avg_cents'] / 100);
         }
         
@@ -295,11 +289,6 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
             $params['month'] = sprintf('%02d', $criteria['month']);
         }
         
-        if (isset($criteria['category'])) {
-            $conditions[] = 'category = :category';
-            $params['category'] = $criteria['category'];
-        }
-        
         $whereClause = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
         
         $query = "SELECT SUM(amount_cents) as total_cents FROM expenses {$whereClause}";
@@ -307,9 +296,8 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $statement = $this->pdo->prepare($query);
         $statement->execute($params);
         
-        $result = $statement->fetchColumn();
-        
-        return $result ? (float) ($result / 100) : 0.0;
+        $total = $statement->fetchColumn();
+        return $total !== false ? (float) ($total / 100) : 0.0;
     }
 
     public function beginTransaction(): void
@@ -326,45 +314,44 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
     {
         $this->pdo->rollBack();
     }
-
     public function count(User $user, ?int $year, ?int $month): int
-    {
-        $params = [':user_id' => $user->id];
-        $where = 'WHERE user_id = :user_id';
+{
+    $params = ['user_id' => $user->id];
+    $conditions = ['user_id = :user_id'];
 
-        if ($year !== null) {
-            $where .= ' AND strftime("%Y", date) = :year';
-            $params[':year'] = strval($year);
-        }
-
-        if ($month !== null) {
-            $where .= ' AND strftime("%m", date) = :month';
-            $params[':month'] = str_pad((string)$month, 2, '0', STR_PAD_LEFT);
-        }
-
-        $sql = "SELECT COUNT(*) FROM expenses $where";
-        $stmt = $this->pdo->prepare($sql);
-
-        foreach ($params as $key => $val) {
-            $stmt->bindValue($key, $val);
-        }
-
-        $stmt->execute();
-
-        return (int) $stmt->fetchColumn();
+    if ($year !== null) {
+        $conditions[] = 'strftime("%Y", date) = :year';
+        $params['year'] = (string) $year;
     }
+
+    if ($month !== null) {
+        $conditions[] = 'strftime("%m", date) = :month';
+        $params['month'] = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+    }
+
+    $whereClause = 'WHERE ' . implode(' AND ', $conditions);
+
+    $sql = "SELECT COUNT(*) FROM expenses $whereClause";
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute($params);
+
+    return (int) $stmt->fetchColumn();
+}
+
     /**
+     * Helper to create Expense entity from DB data
+     * 
      * @throws Exception
      */
-    private function createExpenseFromData(mixed $data): Expense
+    private function createExpenseFromData(array $data): Expense
     {
         return new Expense(
-            $data['id'],
-            $data['user_id'],
-            new DateTimeImmutable($data['date']),
-            $data['category'],
-            $data['amount_cents'],
-            $data['description'],
+            id: (int) $data['id'],
+            userId: (int) $data['user_id'],
+            date: new DateTimeImmutable($data['date']),
+            category: $data['category'],
+            amountCents: (int) $data['amount_cents'],
+            description: $data['description'] ?? ''
         );
     }
 }

@@ -9,24 +9,29 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Views\Twig;
+use App\Domain\Repository\UserRepositoryInterface;
 
 class AuthController extends BaseController
 {
+    // Inject dependencies: view, user repo, auth service, logger
     public function __construct(
         Twig $view,
+        UserRepositoryInterface $userRepository,
         private AuthService $authService,
         private LoggerInterface $logger,
     ) {
-        parent::__construct($view);
+        parent::__construct($view, $userRepository);
     }
 
+    // Display registration page
     public function showRegister(Request $request, Response $response): Response
     {
         $this->logger->info('Register page requested');
         return $this->render($response, 'auth/register.twig');
     }
 
-  public function register(Request $request, Response $response): Response
+    // Handles registration form submission
+    public function register(Request $request, Response $response): Response
     {
         $data = (array) $request->getParsedBody();
         $username = trim($data['username'] ?? '');
@@ -35,7 +40,7 @@ class AuthController extends BaseController
 
         $errors = [];
 
-        // Validate
+        // Validation
         if (strlen($username) < 4) {
             $errors['username'] = 'Username must be at least 4 characters.';
         }
@@ -44,6 +49,7 @@ class AuthController extends BaseController
             $errors['confirm_password'] = 'Passwords do not match.';
         }
 
+        // If validation errors, show form with errors
         if (!empty($errors)) {
             return $this->render($response, 'auth/register.twig', [
                 'errors' => $errors,
@@ -56,7 +62,7 @@ class AuthController extends BaseController
         try {
             $this->authService->register($username, $password);
             return $response->withHeader('Location', '/login')->withStatus(302);
-
+        
         } catch (\InvalidArgumentException $e) {
             $errors['username'] = $e->getMessage();
 
@@ -67,8 +73,7 @@ class AuthController extends BaseController
                 'confirm_password' => $confirmPassword,
             ]);
         } catch (\Exception $e) {
-            $errors['general'] = 'An unexpected error occurred. Please try again later.';
-
+            $errors['general'] = 'An unexpected error occurred.';
             return $this->render($response, 'auth/register.twig', [
                 'errors' => $errors,
                 'username' => $username,
@@ -78,13 +83,13 @@ class AuthController extends BaseController
         }
     }
 
-
-
-   public function showLogin(Request $request, Response $response): Response
+    // Display login page
+    public function showLogin(Request $request, Response $response): Response
     {
         return $this->render($response, 'auth/login.twig');
     }
 
+    // Handle login form submission
     public function login(Request $request, Response $response): Response
     {
         $data = (array) $request->getParsedBody();
@@ -93,6 +98,7 @@ class AuthController extends BaseController
 
         $errors = [];
 
+        // Validate inputs
         if ($username === '') {
             $errors['username'] = 'Please enter your username.';
         }
@@ -101,6 +107,7 @@ class AuthController extends BaseController
             $errors['password'] = 'Please enter your password.';
         }
 
+        // Show form again if validation fails
         if (!empty($errors)) {
             return $this->render($response, 'auth/login.twig', [
                 'errors' => $errors,
@@ -121,15 +128,17 @@ class AuthController extends BaseController
         }
     }
 
-  public function logout(Request $request, Response $response): Response
+    // Log out user and destroy session
+    public function logout(Request $request, Response $response): Response
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
+
         $_SESSION = [];
 
-        // Delete cookies from session
+
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000,
@@ -137,11 +146,9 @@ class AuthController extends BaseController
                 $params["secure"], $params["httponly"]
             );
         }
-
-        // Destroy session
+        
         session_destroy();
-
-        // Redirect to login
+        
         return $response->withHeader('Location', '/login')->withStatus(302);
     }
 

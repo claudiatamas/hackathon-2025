@@ -8,8 +8,6 @@ use App\Domain\Entity\User;
 
 interface UserRepositoryInterface
 {
-    
-
     public function findByUsername(string $username): ?User;
 
     public function find(mixed $id): ?User;

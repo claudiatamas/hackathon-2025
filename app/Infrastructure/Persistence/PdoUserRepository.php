@@ -43,7 +43,7 @@ class PdoUserRepository implements UserRepositoryInterface
             $stmt->execute([
                 $user->username,
                 $user->passwordHash,
-                $user->createdAt->format('c'), // ISO-8601
+                $user->createdAt->format('c'), 
             ]);
         }
 
@@ -59,7 +59,7 @@ class PdoUserRepository implements UserRepositoryInterface
                 (int) $row['id'],
                 $row['username'],
                 $row['password_hash'],
-                new \DateTimeImmutable($row['created_at'])
+                new DateTimeImmutable($row['created_at'])
             );
         }
 }
