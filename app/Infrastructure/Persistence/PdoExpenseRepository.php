@@ -17,9 +17,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         private readonly PDO $pdo,
     ) {}
 
-    /**
-     * @throws Exception
-     */
+    
     public function find(int $id): ?Expense
     {
         $query = 'SELECT * FROM expenses WHERE id = :id';
@@ -33,9 +31,7 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         return $this->createExpenseFromData($data);
     }
 
-    /**
-     * @throws Exception
-     */
+
     public function save(Expense $expense): void
     {
         if ($expense->id === null) {
@@ -315,34 +311,30 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         $this->pdo->rollBack();
     }
     public function count(User $user, ?int $year, ?int $month): int
-{
-    $params = ['user_id' => $user->id];
-    $conditions = ['user_id = :user_id'];
+    {
+        $params = ['user_id' => $user->id];
+        $conditions = ['user_id = :user_id'];
 
-    if ($year !== null) {
-        $conditions[] = 'strftime("%Y", date) = :year';
-        $params['year'] = (string) $year;
+        if ($year !== null) {
+            $conditions[] = 'strftime("%Y", date) = :year';
+            $params['year'] = (string) $year;
+        }
+
+        if ($month !== null) {
+            $conditions[] = 'strftime("%m", date) = :month';
+            $params['month'] = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
+        }
+
+        $whereClause = 'WHERE ' . implode(' AND ', $conditions);
+
+        $sql = "SELECT COUNT(*) FROM expenses $whereClause";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
     }
 
-    if ($month !== null) {
-        $conditions[] = 'strftime("%m", date) = :month';
-        $params['month'] = str_pad((string) $month, 2, '0', STR_PAD_LEFT);
-    }
 
-    $whereClause = 'WHERE ' . implode(' AND ', $conditions);
-
-    $sql = "SELECT COUNT(*) FROM expenses $whereClause";
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->execute($params);
-
-    return (int) $stmt->fetchColumn();
-}
-
-    /**
-     * Helper to create Expense entity from DB data
-     * 
-     * @throws Exception
-     */
     private function createExpenseFromData(array $data): Expense
     {
         return new Expense(

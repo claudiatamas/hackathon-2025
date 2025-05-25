@@ -24,9 +24,7 @@ class ExpenseController extends BaseController
         'Entertainment'
     ];
 
-    /**
-     * Constructor to inject dependencies.
-     */
+
     public function __construct(
         Twig $view,
         private readonly ExpenseService $expenseService,
@@ -37,9 +35,9 @@ class ExpenseController extends BaseController
         $this->userRepository = $userRepository;
     }
 
-    /**
-     * Display paginated list of expenses for the current user filtered by year and month.
-     */
+
+     // Display paginated list of expenses for the current user 
+ 
     public function index(Request $request, Response $response): Response
     {
         $user = $this->getCurrentUser();
@@ -86,9 +84,7 @@ class ExpenseController extends BaseController
         ]);
     }
 
-    /**
-     * Handle storing a new expense submitted via form.
-     */
+
     public function store(Request $request, Response $response): Response
     {
         $user = $this->getCurrentUser();
@@ -202,7 +198,7 @@ class ExpenseController extends BaseController
             return $response->withStatus(404);
         }
 
-        // Authorization: ensure expense belongs to current user
+
         if ($expense->userId !== $user->id) {
             return $response->withStatus(403);
         }

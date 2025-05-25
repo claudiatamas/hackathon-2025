@@ -16,9 +16,7 @@ class PdoUserRepository implements UserRepositoryInterface
         private readonly PDO $pdo,
     ) {}
 
-    /**
-     * @throws Exception
-     */
+    
     public function find(mixed $id): ?User
     {
         $query = 'SELECT * FROM users WHERE id = :id';

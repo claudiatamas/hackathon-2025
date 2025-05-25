@@ -8,7 +8,7 @@ class AlertGenerator
 {
     private array $categoryBudgets = [
         'Groceries' => 300.00,
-        'Transport' => 100.00,
+        'Transport' => 200.00,
         'Utilities' => 250.00,
         'Entertainment' => 150.00,
     ];

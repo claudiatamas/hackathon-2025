@@ -20,7 +20,7 @@ abstract class BaseController
         $this->userRepository = $userRepository;
     }
 
-    // Retrieve currently logged-in user
+
     protected function getCurrentUser(): ?User
     {
         if (isset($_SESSION['user_id'])) {
@@ -30,7 +30,7 @@ abstract class BaseController
         return null;
     }
 
-    // Render a Twig template with optional data and current user info
+
     protected function render(Response $response, string $template, array $data = []): Response
     {
         $data['currentUserId'] = $_SESSION['user_id'] ?? null;

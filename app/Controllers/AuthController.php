@@ -23,14 +23,14 @@ class AuthController extends BaseController
         parent::__construct($view, $userRepository);
     }
 
-    // Display registration page
+
     public function showRegister(Request $request, Response $response): Response
     {
         $this->logger->info('Register page requested');
         return $this->render($response, 'auth/register.twig');
     }
 
-    // Handles registration form submission
+    // Registration form submission
     public function register(Request $request, Response $response): Response
     {
         $data = (array) $request->getParsedBody();
@@ -89,7 +89,7 @@ class AuthController extends BaseController
         return $this->render($response, 'auth/login.twig');
     }
 
-    // Handle login form submission
+    // Login form submission
     public function login(Request $request, Response $response): Response
     {
         $data = (array) $request->getParsedBody();

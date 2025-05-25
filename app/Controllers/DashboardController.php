@@ -22,7 +22,7 @@ class DashboardController extends BaseController
         parent::__construct($view, $userRepository);
     }
 
-    // Render dashboard 
+    
     public function index(Request $request, Response $response): Response
     {
         $user = $this->getCurrentUser();
@@ -49,7 +49,6 @@ class DashboardController extends BaseController
             ? $this->alertGenerator->generate($categoryTotals)
             : [];
 
-        // Render view with collected data
         return $this->render($response, 'dashboard.twig', [
             'year'                  => $year,
             'month'                 => $month,
